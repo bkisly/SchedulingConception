@@ -5,6 +5,8 @@
         private readonly Queue<Process> _processes;
         private readonly ExecutionStats _stats;
 
+        private double _deltaTime;
+
         public Scheduler(uint interProcCount, uint computingProcCount, uint ioProcCount)
         {
             _processes = new Queue<Process>(GenerateProcesses(interProcCount, computingProcCount, ioProcCount));
@@ -14,6 +16,7 @@
 
         public void Run(uint cycles = 100, double deltaTime = .3)
         {
+            _deltaTime = deltaTime;
             var currentProcess = _processes.Dequeue();
             int cyclesForCurrentProcess = (int)currentProcess.Priority;
 
@@ -23,7 +26,7 @@
                 {
                     currentProcess.Execute();
                     cyclesForCurrentProcess--;
-                    Thread.Sleep(TimeSpan.FromSeconds(deltaTime));
+                    Thread.Sleep(TimeSpan.FromSeconds(_deltaTime));
                 }
 
                 if (cyclesForCurrentProcess != 0) continue;
@@ -42,12 +45,15 @@
                 case ProcessPriority.Computing:
                 default:
                     _stats.ComputingExecutions++;
+                    _stats.ComputingTime += _deltaTime;
                     break;
                 case ProcessPriority.Inter:
                     _stats.InterExecutions++;
+                    _stats.InterTime += _deltaTime;
                     break;
                 case ProcessPriority.Io:
                     _stats.IoExecutions++;
+                    _stats.IoTime += _deltaTime;
                     break;
             }
         }

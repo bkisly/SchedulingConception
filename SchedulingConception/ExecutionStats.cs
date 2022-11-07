@@ -8,7 +8,12 @@
         public uint InterExecutions { get; set; }
         public uint IoExecutions { get; set; }
 
+        public double ComputingTime { get; set; }
+        public double InterTime { get; set; }
+        public double IoTime { get; set; }      
+
         public uint TotalExecutions => ComputingExecutions + InterExecutions + IoExecutions;
+        public double TotalTime => ComputingTime + InterTime + IoTime;
 
         public ExecutionStats(uint interProcCount, uint compProcCount, uint ioProcCount)
         {
@@ -31,7 +36,12 @@
 
             Console.WriteLine($"{ComputingExecutions * 100 / TotalExecutions:F2}% of computing executions");
             Console.WriteLine($"{InterExecutions * 100 / TotalExecutions:F2}% of inter executions");
-            Console.WriteLine($"{IoExecutions * 100 / TotalExecutions:F2}% of I/O executions");
+            Console.WriteLine($"{IoExecutions * 100 / TotalExecutions:F2}% of I/O executions\n");
+
+            Console.WriteLine($"{ComputingTime} s spent on computing processes");
+            Console.WriteLine($"{InterTime} s spent of inter processes");
+            Console.WriteLine($"{IoTime} s spent of I/O processes");
+            Console.WriteLine($"{TotalTime} s in total");
         }
     }
 }
