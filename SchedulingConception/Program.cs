@@ -9,13 +9,13 @@ if (args.Length < 2)
 double deltaTime = 0;
 uint interProcCount = 10, computingProcCount = 10, ioProcCount = 10;
 
-var validArgs = uint.TryParse(args[0], out var cycles) && double.TryParse(args[1], out deltaTime);
+var validArgs = double.TryParse(args[0], out var simulationTime) && double.TryParse(args[1], out deltaTime);
 
 if (args.Length == 5)
 {
     validArgs = validArgs 
-                && uint.TryParse(args[2], out computingProcCount)
-                && uint.TryParse(args[3], out interProcCount)
+                && uint.TryParse(args[2], out interProcCount)
+                && uint.TryParse(args[3], out computingProcCount)
                 && uint.TryParse(args[4], out ioProcCount);
 }
 else if (args.Length != 2 && args.Length != 5)
@@ -30,5 +30,5 @@ if (!validArgs)
     return;
 }
 
-var scheduler = new Scheduler(interProcCount, computingProcCount, ioProcCount);
-scheduler.Run(cycles, deltaTime);
+var scheduler = new Scheduler(new ProcessCountInfo(interProcCount, computingProcCount, ioProcCount));
+scheduler.Run(simulationTime, deltaTime);

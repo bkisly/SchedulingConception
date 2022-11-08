@@ -25,8 +25,10 @@
 
     internal enum ProcessPriority
     {
-        Computing = 1,
-        Inter = 2,
-        Io = 4
+        Io = 1,
+        Computing = 2,
+        Inter = 4
     }
+
+    internal record struct ProcessCountInfo(uint InterProcCount, uint ComputingProcCount, uint IoProcCount);
 }

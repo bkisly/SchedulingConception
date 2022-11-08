@@ -2,7 +2,7 @@
   "profiles": {
     "SchedulingConception": {
       "commandName": "Project",
-      "commandLineArgs": "700 0,01"
+      "commandLineArgs": "60 0,01 18 0 0"
     }
   }
 }
