@@ -30,5 +30,5 @@
         Inter = 4
     }
 
-    internal record struct ProcessCountInfo(uint InterProcCount, uint ComputingProcCount, uint IoProcCount);
+    internal record struct ProcessCountInfo(uint Inter, uint Computing, uint Io);
 }

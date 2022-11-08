@@ -18,46 +18,79 @@
             RegisterEvents();
         }
 
-        public void Run(double simulationTime = 7, double deltaTime = .01)
+        public void Run(double simulationTime, double deltaTime)
         {
             // Preparation
 
             _deltaTime = deltaTime;
 
-            var cycles = (int)(simulationTime / deltaTime);
-            var executedProcesses = new List<Process>();
-            var pidToTimeLeft = GetExecTimeDictionary(simulationTime);
+            var cycles = (int)simulationTime / deltaTime;
+            var total = 0;
+            var baseCredits = new ProcessCountInfo();
+
+            if (_processCountInfo.Inter > 0)
+            {
+                total += 4;
+                baseCredits.Inter = 4;
+            }
+
+            if (_processCountInfo.Computing > 0)
+            {
+                total += 2;
+                baseCredits.Computing = 2;
+            }
+
+            if (_processCountInfo.Io > 0)
+            {
+                total++;
+                baseCredits.Io = 1;
+            }
+
+            var currentCredits = baseCredits;
 
             // Scheduling loop
 
-            for (var i = 0; i < cycles; i++)
+            for (var i = 0; i < cycles && total > 0; i++)
             {
                 var currentProcess = _processes.Dequeue();
 
-                if (pidToTimeLeft[currentProcess.Pid] > 0)
+                while (CreditsSelector(currentProcess, currentCredits) == 0)
                 {
-                    currentProcess.Execute();
-                    pidToTimeLeft[currentProcess.Pid] -= deltaTime;
-                    Thread.Sleep(TimeSpan.FromSeconds(_deltaTime));
+                    _processes.Enqueue(currentProcess);
+                    currentProcess = _processes.Dequeue();
                 }
 
-                if (pidToTimeLeft[currentProcess.Pid] <= 0)
+                currentProcess.Execute();
+                Thread.Sleep(TimeSpan.FromSeconds(deltaTime));
+                _processes.Enqueue(currentProcess);
+
+                switch (currentProcess.Priority)
                 {
-                    executedProcesses.Add(currentProcess);
-
-                    if (_processes.Count == 0 && executedProcesses.Count > 0)
-                    {
-                        foreach (var process in executedProcesses)
-                            _processes.Enqueue(process);
-
-                        executedProcesses.Clear();
-                    }
+                    case ProcessPriority.Io:
+                    default:
+                        currentCredits.Io--;
+                        break;
+                    case ProcessPriority.Computing:
+                        currentCredits.Computing--;
+                        break;
+                    case ProcessPriority.Inter:
+                        currentCredits.Inter--;
+                        break;
                 }
-                else _processes.Enqueue(currentProcess);
+
+                if (currentCredits == new ProcessCountInfo())
+                    currentCredits = baseCredits;
             }
 
             _stats.PrintReport();
         }
+
+        private static uint CreditsSelector(Process process, ProcessCountInfo credits) => process.Priority switch
+        {
+            ProcessPriority.Inter => credits.Inter,
+            ProcessPriority.Computing => credits.Computing,
+            _ => credits.Io
+        };
 
         private void UpdateStats(Process process)
         {
@@ -79,38 +112,23 @@
             }
         }
 
-        private Dictionary<int, double> GetExecTimeDictionary(double schedulingTime)
-        {
-            var total = 0;
-            if (_processCountInfo.InterProcCount > 0) total += 4;
-            if (_processCountInfo.ComputingProcCount > 0) total += 2;
-            if (_processCountInfo.IoProcCount > 0) total++;
-
-            return _processes.ToDictionary(process => process.Pid, process => process.Priority switch
-            {
-                ProcessPriority.Inter => (4d / total) * schedulingTime / _processCountInfo.InterProcCount,
-                ProcessPriority.Computing => (2d / total) * schedulingTime / _processCountInfo.ComputingProcCount,
-                _ => (1d / total) * schedulingTime / _processCountInfo.IoProcCount
-            });
-        }
-
         private static IEnumerable<Process> GenerateProcesses(ProcessCountInfo processCountInfo)
         {
             var id = 0;
 
-            for (var i = 0; i < processCountInfo.InterProcCount; i++)
+            for (var i = 0; i < processCountInfo.Inter; i++)
             {
                 yield return new Process(id, $"Inter process no. {i}", ProcessPriority.Inter);
                 id++;
             }
 
-            for (var i = 0; i < processCountInfo.ComputingProcCount; i++)
+            for (var i = 0; i < processCountInfo.Computing; i++)
             {
                 yield return new Process(id, $"Computing process no. {i}", ProcessPriority.Computing);
                 id++;
             }
 
-            for (var i = 0; i < processCountInfo.IoProcCount; i++)
+            for (var i = 0; i < processCountInfo.Io; i++)
             {
                 yield return new Process(id, $"I/O process no. {i}", ProcessPriority.Io);
                 id++;
